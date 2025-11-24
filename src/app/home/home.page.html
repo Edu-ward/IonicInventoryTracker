@@ -1,0 +1,181 @@
+<ion-header>
+  <ion-toolbar color="primary">
+    @if (isLoggedIn) {
+      <ion-title>Inventory Tracker</ion-title>
+      <ion-buttons slot="end">
+        <ion-button (click)="logout()" color="light">
+          <ion-icon slot="icon-only" name="log-out-outline"></ion-icon>
+        </ion-button>
+      </ion-buttons>
+    }
+    @else {
+      <ion-title>Inventory Login Page</ion-title>
+    }
+  </ion-toolbar>
+</ion-header>
+
+<ion-content class="ion-padding">
+
+  @if (!isLoggedIn) {
+    <div style="margin:auto;margin-top:50px;">
+      <ion-card>
+        <ion-card-header>
+          <ion-card-title style="text-align:center; font-family:'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;">Inventory Tracker Login</ion-card-title>
+        </ion-card-header>
+
+        <ion-card-content>
+          <ion-item>
+            <ion-label position="floating">Username</ion-label>
+            <ion-input [(ngModel)]="loginUsername" />
+          </ion-item>
+
+          <ion-item class="ion-margin-top">
+            <ion-label position="floating">Password</ion-label>
+            <ion-input type="password" [(ngModel)]="loginPassword" />
+          </ion-item>
+
+          @if (loginError) {
+            <p style="color:red; margin-top:10px;">Incorrect username or password.</p>
+          }
+
+          <ion-button expand="block" color="primary" class="ion-margin-top" (click)="login()">
+            Login
+          </ion-button>
+        </ion-card-content>
+      </ion-card>
+    </div>
+  }
+
+  @else {
+
+  <ion-tabs>
+
+    <ion-tab-bar slot="top" style="margin-bottom:10px;">
+      <ion-tab-button tab="list">
+        <ion-icon name="list-outline"></ion-icon>
+        <ion-label>Inventory</ion-label>
+      </ion-tab-button>
+
+      <ion-tab-button tab="add">
+        <ion-icon name="add-circle-outline"></ion-icon>
+        <ion-label>Add Item</ion-label>
+      </ion-tab-button>
+    </ion-tab-bar>
+
+    <ion-tab tab="list">
+      <div style="height:calc(100vh - 200px); overflow-y:auto; margin-left:15px; margin-right:15px;">
+        <ion-item style="margin-bottom:10px;">
+          <ion-icon name="search-outline" slot="start"></ion-icon>
+          <ion-input placeholder="Search item name..." [(ngModel)]="searchTerm" (ionInput)="filterList()" />
+        </ion-item>
+
+        <p style="margin:5px 0 10px 5px; font-weight:light;">
+          Total Items Listed: {{ filteredInventory.length }}
+        </p>
+
+        <ion-grid style="width:100%; border:1px solid #ccc; border-collapse:collapse;">
+          <ion-row style="border-bottom:2px solid #ccc; font-weight:bold; background:transparent;">
+            <ion-col size="1" style="padding:0; border-right:1px solid #ccc; text-align:center;">ID</ion-col>
+            <ion-col size="3.5" style="padding:0; border-right:1px solid #ccc; text-align:center;">Name</ion-col>
+            <ion-col size="2.4" style="padding:0; border-right:1px solid #ccc; text-align:center;">Quantity</ion-col>
+            <ion-col size="2.3" style="padding:0; border-right:1px solid #ccc; text-align:center;">Price</ion-col>
+            <ion-col size="2.8" style="padding:0; text-align:center;">Actions</ion-col>
+          </ion-row>
+
+          <div style="max-height:60vh; overflow-y:auto;">
+          @for (item of filteredInventory; track item.id){
+            <ion-row style="border-bottom:1px solid #eee; align-items:center;">
+              <ion-col size="1" style="padding:0; border-right:1px solid #eee; text-align:center;">{{ item.id }}</ion-col>
+              <ion-col size="3.5" style="padding:0; border-right:1px solid #eee; text-align:center;">{{ item.name }}</ion-col>
+              <ion-col size="2.4" style="padding:0; border-right:1px solid #eee; text-align:center;">{{ item.quantity }}</ion-col>
+              <ion-col size="2.3" style="padding:0; border-right:1px solid #eee; text-align:center;">₱{{ item.price }}</ion-col>
+
+              <ion-col size="2.8" style="padding:0; display:flex; gap:5px; justify-content:center; flex-wrap:wrap;">
+                <ion-button size="small" color="primary" (click)="startEdit(item)">
+                  <ion-icon slot="icon-only" name="create-outline"></ion-icon>
+                </ion-button>
+
+                <ion-button size="small" color="danger" (click)="deleteItem(item.id)">
+                  <ion-icon slot="icon-only" name="trash-outline"></ion-icon>
+                </ion-button>
+              </ion-col>
+            </ion-row>
+
+          @if (editingId != null) {
+            <div class="edit-panel">
+              <ion-card>
+                <ion-card-header>
+                  <ion-card-title>Edit Item</ion-card-title>
+                </ion-card-header>
+              
+                <ion-card-content>
+                  <ion-item>
+                    <ion-label position="floating">Product Name</ion-label>
+                    <ion-input [(ngModel)]="editName"></ion-input>
+                  </ion-item>
+                
+                  <ion-item class="ion-margin-top">
+                    <ion-label position="floating">Quantity</ion-label>
+                    <ion-input type="number" [(ngModel)]="editQuantity"></ion-input>
+                  </ion-item>
+
+                  <ion-item class="ion-margin-top">
+                    <ion-label position="floating">Price</ion-label>
+                    <ion-input type="number" [(ngModel)]="editPrice"></ion-input>
+                  </ion-item>
+
+                  <div style="display:flex; justify-content:flex-end; gap:10px; margin-top:15px;">
+                    <ion-button color="medium" (click)="cancelEdit()">Cancel</ion-button>
+                    <ion-button color="primary" (click)="saveEdit()">Save</ion-button>
+                  </div>
+                </ion-card-content>
+              </ion-card>
+            </div>
+            }
+
+          }
+
+          @empty {
+            <p style="padding-left:120px;">There is no items yet.</p>
+          }
+          </div>
+        </ion-grid>
+      </div>
+
+      
+    </ion-tab>
+
+    <ion-tab tab="add">
+      <ion-card class="ion-margin">
+        <ion-card-header>
+          <ion-card-title>Add New Item</ion-card-title>
+        </ion-card-header>
+
+        <ion-card-content>
+          <ion-item>
+            <ion-label position="floating">Product Name</ion-label>
+            <ion-input [(ngModel)]="newName" />
+          </ion-item>
+
+          <ion-item class="ion-margin-top">
+            <ion-label position="floating">Quantity</ion-label>
+            <ion-input type="number" [(ngModel)]="newQuantity" />
+          </ion-item>
+
+          <ion-item class="ion-margin-top">
+            <ion-label position="floating">Price</ion-label>
+            <ion-input type="number" [(ngModel)]="newPrice" />
+          </ion-item>
+
+          <ion-button expand="block" color="success" class="ion-margin-top" (click)="addItem()">
+            <ion-icon slot="start" name="add-circle-outline"></ion-icon>
+            Add Item
+          </ion-button>
+        </ion-card-content>
+      </ion-card>
+    </ion-tab>
+
+  </ion-tabs>
+
+}
+</ion-content>
