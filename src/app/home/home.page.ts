@@ -3,17 +3,17 @@ import { IonHeader, IonToolbar, IonTitle, IonContent, IonInput, IonButton, IonGr
 } from '@ionic/angular/standalone';
 import { FormsModule } from '@angular/forms';
 import { addIcons } from 'ionicons';
-import { trashOutline, createOutline, addCircleOutline, listOutline, logOutOutline, searchOutline } from 'ionicons/icons';
+import { trashOutline, createOutline, addCircleOutline, listOutline, logOutOutline, searchOutline, statsChartOutline } from 'ionicons/icons';
 
 addIcons({
-  'trash-outline': trashOutline,
-  'create-outline': createOutline,
-  'add-circle-outline': addCircleOutline,
-  'list-outline': listOutline,
-  'log-out-outline': logOutOutline,
-  'search-outline': searchOutline
+'trash-outline': trashOutline,
+'create-outline': createOutline,
+'add-circle-outline': addCircleOutline,
+'list-outline': listOutline,
+'log-out-outline': logOutOutline,
+'search-outline': searchOutline,
+'stats-chart-outline': statsChartOutline
 });
-
 interface Item {
   id: number;
   name: string;
@@ -26,11 +26,10 @@ interface Item {
   templateUrl: 'home.page.html',
   styleUrls: ['home.page.scss'],
   standalone: true,
-  imports: [ IonButtons, IonCardTitle, IonTab, IonTabs, IonTabBar, IonTabButton, IonCardHeader, IonItem, IonCardContent, IonLabel, IonCard, IonIcon, IonHeader, IonToolbar, IonTitle, IonContent, IonInput, IonButton, IonGrid, IonRow, IonCol, FormsModule
+  imports: [ IonButtons, IonCardTitle, IonTab, IonTabs, IonTabBar, IonTabButton, IonCardHeader, IonItem, IonCardContent, IonLabel, IonCard, IonIcon, IonHeader, IonToolbar, IonTitle, IonContent, IonInput, IonButton, IonGrid, IonRow, IonCol, FormsModule,
   ],
 })
 export class HomePage {
-
   inventory: Item[] = [];
   filteredInventory: Item[] = [];
   lastId: number = 0;
@@ -51,7 +50,11 @@ export class HomePage {
   loginPassword = '';
   loginError = false;
 
-  validUser = { username: "admin", password: "admin123" };
+  validUser = { username: 'admin', password: 'admin123' };
+
+  totalItems = 0;
+  lowStock = 0;
+  highStock = 0;
 
   constructor(
     private alertController: AlertController,
@@ -59,6 +62,7 @@ export class HomePage {
   ) {
     this.loadFromStorage();
     this.filteredInventory = this.inventory;
+    this.calculateDashboardStats();
   }
 
   async showToast(message: string, color: string = 'success') {
@@ -66,7 +70,7 @@ export class HomePage {
       message,
       duration: 2000,
       position: 'top',
-      color
+      color,
     });
     await toast.present();
   }
@@ -77,12 +81,14 @@ export class HomePage {
     if (data) this.inventory = JSON.parse(data);
     if (idData) this.lastId = Number(idData);
     this.filterList();
+    this.calculateDashboardStats();
   }
 
   saveToStorage() {
     localStorage.setItem('inventory', JSON.stringify(this.inventory));
     localStorage.setItem('inventory_last_id', String(this.lastId));
     this.filterList();
+    this.calculateDashboardStats();
   }
 
   filterList() {
@@ -92,24 +98,34 @@ export class HomePage {
     );
   }
 
+  calculateDashboardStats() {
+    this.totalItems = this.inventory.length;
+    this.lowStock = this.inventory.filter(i => i.quantity <= 5).length;
+    this.highStock = this.inventory.filter(i => i.quantity > 20).length;
+  }
+
   async addItem() {
-    if (!this.newName || this.newQuantity == null || this.newPrice == null) return;
+    if (!this.newName || this.newQuantity == null || this.newPrice == null)
+      return;
 
     const existingItem = this.inventory.find(
       item => item.name.toLowerCase() === this.newName.toLowerCase()
     );
 
     if (existingItem) {
-      existingItem.quantity += this.newQuantity!;
+      existingItem.quantity += this.newQuantity;
       existingItem.price = this.newPrice;
-      await this.showToast('Existing item updated: quantity increased and price updated.', 'warning');
+      await this.showToast(
+        'Existing item updated: quantity increased and price updated.',
+        'warning'
+      );
     } else {
       this.lastId++;
       this.inventory.push({
         id: this.lastId,
         name: this.newName,
         quantity: this.newQuantity,
-        price: this.newPrice
+        price: this.newPrice,
       });
       await this.showToast('The item has been added to the inventory.');
     }
@@ -134,9 +150,9 @@ export class HomePage {
             this.inventory = this.inventory.filter(i => i.id !== id);
             this.saveToStorage();
             this.showToast('Item deleted', 'danger');
-          }
-        }
-      ]
+          },
+        },
+      ],
     });
     await alert.present();
   }
@@ -149,7 +165,12 @@ export class HomePage {
   }
 
   async saveEdit() {
-    if (this.editingId != null && this.editName && this.editQuantity != null && this.editPrice != null) {
+    if (
+      this.editingId != null &&
+      this.editName &&
+      this.editQuantity != null &&
+      this.editPrice != null
+    ) {
       const index = this.inventory.findIndex(i => i.id === this.editingId);
       if (index > -1) {
         this.inventory[index].name = this.editName;
@@ -170,10 +191,13 @@ export class HomePage {
   }
 
   async login() {
-    if (this.loginUsername == this.validUser.username && this.loginPassword == this.validUser.password) {
+    if (
+      this.loginUsername == this.validUser.username &&
+      this.loginPassword == this.validUser.password
+    ) {
       this.isLoggedIn = true;
       this.loginError = false;
-      localStorage.setItem("logged_in", "true");
+      localStorage.setItem('logged_in', 'true');
       await this.showToast('Login Successful');
     } else {
       this.loginError = true;
@@ -191,11 +215,11 @@ export class HomePage {
           role: 'destructive',
           handler: () => {
             this.isLoggedIn = false;
-            localStorage.removeItem("logged_in");
+            localStorage.removeItem('logged_in');
             this.showToast('Logged out', 'warning');
-          }
-        }
-      ]
+          },
+        },
+      ],
     });
     await alert.present();
   }
